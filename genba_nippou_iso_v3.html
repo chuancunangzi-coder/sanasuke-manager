@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現場日報 / ISO管理システム</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f4;--bg3:#eeede9;
+  --text:#1a1a18;--text2:#6b6b68;--text3:#9a9a96;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --info-bg:#e6f1fb;--info-text:#185fa5;--info-border:#b5d4f4;
+  --success-bg:#eaf3de;--success-text:#3b6d11;
+  --warn-bg:#faeeda;--warn-text:#854f0b;
+  --danger-bg:#fcebeb;--danger-text:#a32d2d;
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#323230;
+    --text:#f0ede8;--text2:#a8a8a4;--text3:#6e6e6a;
+    --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.22);
+    --info-bg:#0c3a6b;--info-text:#85b7eb;--info-border:#185fa5;
+    --success-bg:#17340a;--success-text:#97c459;
+    --warn-bg:#412402;--warn-text:#fac775;
+    --danger-bg:#501313;--danger-text:#f09595;
+  }
+}
+body{font-family:-apple-system,'Hiragino Sans','Yu Gothic UI',sans-serif;font-size:15px;color:var(--text);background:var(--bg3);min-height:100vh}
+.app{max-width:720px;margin:0 auto;padding:1rem;background:var(--bg3)}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;padding:.75rem 1rem;background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border)}
+.header h1{font-size:17px;font-weight:600}
+.header .sub{font-size:12px;color:var(--text2);margin-top:2px}
+.nav{display:flex;gap:3px;margin-bottom:1rem;background:var(--bg2);border-radius:10px;padding:4px}
+.nav button{flex:1;padding:8px 4px;border:none;background:transparent;border-radius:7px;cursor:pointer;font-size:11px;font-weight:500;color:var(--text2);transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.3;font-family:inherit}
+.nav button .ico{font-size:17px;line-height:1}
+.nav button.active{background:var(--bg);color:var(--text);border:0.5px solid var(--border2);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.section{display:none}.section.active{display:block}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.1rem;margin-bottom:.85rem}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:.85rem;display:flex;align-items:center;gap:6px}
+.field{margin-bottom:.85rem}
+.lbl{display:block;font-size:13px;color:var(--text2);margin-bottom:5px;font-weight:500}
+input[type=text],input[type=number],input[type=month],input[type=url],select,textarea{
+  width:100%;padding:9px 11px;border:0.5px solid var(--border2);border-radius:var(--radius);
+  font-size:14px;background:var(--bg);color:var(--text);outline:none;
+  font-family:inherit;transition:border-color .15s
+}
+input:focus,select:focus,textarea:focus{border-color:#185fa5}
+textarea{min-height:68px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-save{background:var(--text);color:var(--bg);border:none;padding:14px;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;font-family:inherit}
+.btn-save:hover{opacity:.82}.btn-save:disabled{opacity:.45;cursor:not-allowed}
+.btn-sub{border:0.5px solid var(--border2);background:transparent;padding:9px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:5px;font-family:inherit;transition:background .15s}
+.btn-sub:hover{background:var(--bg2)}
+.btn-ai{background:var(--info-bg);color:var(--info-text);border:0.5px solid var(--info-border);padding:12px 16px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;width:100%;justify-content:center;font-family:inherit;transition:opacity .15s}
+.btn-ai:hover{opacity:.82}.btn-ai:disabled{opacity:.45;cursor:not-allowed}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-right:3px}
+.b-red{background:var(--danger-bg);color:var(--danger-text)}
+.b-amber{background:var(--warn-bg);color:var(--warn-text)}
+.b-green{background:var(--success-bg);color:var(--success-text)}
+.b-blue{background:var(--info-bg);color:var(--info-text)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.metric{background:var(--bg2);border-radius:var(--radius);padding:.75rem;text-align:center}
+.metric .num{font-size:24px;font-weight:600;margin-top:2px}
+.metric .lbl2{font-size:11px;color:var(--text2)}
+.bar-wrap{background:var(--bg2);border-radius:4px;height:13px;overflow:hidden}
+.bar{height:100%;border-radius:4px;transition:width .4s}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--info-text);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-out{background:var(--bg2);border-radius:var(--radius);padding:1rem;font-size:13px;line-height:1.85;white-space:pre-wrap;max-height:480px;overflow-y:auto;margin-top:.75rem;border:0.5px solid var(--border)}
+/* Googleドライブリンク入力欄 */
+.drive-link-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.drive-link-row input{flex:1;font-size:13px}
+.drive-link-row button{flex-shrink:0;padding:8px 10px;border:0.5px solid var(--border2);background:transparent;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--danger-text)}
+.drive-link-preview{display:flex;flex-wrap:wrap;gap:6px;margin-top:.5rem}
+.drive-chip{display:inline-flex;align-items:center;gap:5px;background:var(--info-bg);color:var(--info-text);border:0.5px solid var(--info-border);border-radius:6px;padding:4px 10px;font-size:12px;text-decoration:none;max-width:100%;overflow:hidden}
+.drive-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+/* how-to box */
+.howto{background:var(--bg2);border-radius:var(--radius);padding:.75rem 1rem;font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:.85rem;border-left:3px solid var(--info-text)}
+.seiban-table{width:100%;font-size:13px;border-collapse:collapse}
+.seiban-table th{text-align:left;padding:6px 8px;font-size:12px;color:var(--text2);border-bottom:0.5px solid var(--border2);font-weight:600;background:var(--bg2)}
+.seiban-table td{padding:5px 8px;border-bottom:0.5px solid var(--border)}
+.seiban-table tr:last-child td{border-bottom:none}
+.seiban-table input{padding:5px 7px;font-size:13px}
+.worker-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:0.5px solid var(--border);border-radius:6px;padding:4px 9px;font-size:12px;margin:3px}
+.worker-tag button{border:none;background:none;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;padding:0}
+.proc-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.85rem}
+.proc-tab{padding:7px 13px;border:0.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;color:var(--text2);font-family:inherit;transition:all .15s}
+.proc-tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.pri-item{display:flex;align-items:flex-start;gap:10px;padding:.65rem 0;border-bottom:0.5px solid var(--border)}
+.pri-item:last-child{border-bottom:none}
+.pri-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.log-item{border-left:2px solid var(--border2);padding:.5rem .75rem;margin-bottom:.5rem}
+.log-date{font-size:11px;color:var(--text2);margin-bottom:3px}
+.success-msg{text-align:center;padding:.75rem;font-size:13px;color:var(--success-text);background:var(--success-bg);border-radius:var(--radius);margin-top:.75rem;display:none}
+.paste-area{width:100%;min-height:90px;font-size:12px;font-family:'Courier New',monospace;border:1.5px dashed var(--border2);border-radius:var(--radius);padding:.75rem;background:var(--bg2);color:var(--text);resize:vertical}
+.proc-block{display:none}.proc-block.active{display:block}
+.guide-step{display:flex;gap:12px;align-items:flex-start;padding:.65rem 0;border-bottom:0.5px solid var(--border)}
+.guide-step:last-child{border-bottom:none}
+.guide-num{width:26px;height:26px;border-radius:50%;background:var(--info-bg);color:var(--info-text);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--radius-lg);padding:1.25rem;max-width:560px;width:90%;max-height:80vh;display:flex;flex-direction:column;gap:.75rem}
+.modal h3{font-size:15px;font-weight:600}
+.modal-body{overflow-y:auto;flex:1}
+.modal-footer{display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <h1>🏭 現場日報 / ISO管理</h1>
+      <div class="sub" id="today-label"></div>
+    </div>
+    <button class="btn-sub" onclick="showTab('settings')">⚙️ 設定</button>
+  </div>
+
+  <nav class="nav">
+    <button class="active" onclick="showTab('report')"><span class="ico">✏️</span>日報入力</button>
+    <button onclick="showTab('seiban')"><span class="ico">📋</span>製番進捗</button>
+    <button onclick="showTab('dashboard')"><span class="ico">📊</span>ダッシュ</button>
+    <button onclick="showTab('ai')"><span class="ico">✨</span>AI分析</button>
+    <button onclick="showTab('iso')"><span class="ico">📄</span>ISO報告</button>
+  </nav>
+
+  <!-- ========== 日報入力 ========== -->
+  <div id="section-report" class="section active">
+    <div class="card">
+      <div class="card-title">👤 工程・作業者を選んでください</div>
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">工程</label>
+          <select id="r-process" onchange="updateWorkerSelect()">
+            <option value="">-- 選択してください --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl">作業者名</label>
+          <select id="r-worker"><option value="">-- 工程を先に選択 --</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠️ 不具合報告</div>
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">不具合の種類</label>
+          <select id="r-defect-type">
+            <option>なし</option>
+            <option>クレーム品（顧客返却）</option>
+            <option>本社工場 検査返却</option>
+            <option>社内検査不合格</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl">件数</label>
+          <input type="number" id="r-defect-count" min="0" value="0">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">不具合の内容・原因（詳しく）</label>
+        <textarea id="r-defect-detail" placeholder="例：溶接部のひずみによる寸法不良。&#10;原因：治具の固定が不足していた。&#10;対処：治具を再調整し再発防止の手順を追加。"></textarea>
+      </div>
+
+      <!-- Googleドライブ写真リンク -->
+      <div class="field">
+        <label class="lbl">📷 不具合写真（Googleドライブのリンク）</label>
+        <div class="howto">
+          <strong>📌 写真リンクの貼り方（3ステップ）</strong><br>
+          ① スマホで写真を撮影 → Googleドライブにアップロード<br>
+          ② ドライブで写真を右クリック →「共有」→「リンクをコピー」<br>
+          ③ 下の欄にCtrl+Vで貼り付けて「追加」を押す
+        </div>
+        <div id="drive-link-inputs">
+          <div class="drive-link-row">
+            <input type="url" class="drive-link-input" placeholder="https://drive.google.com/file/d/...">
+            <input type="text" class="drive-link-name" placeholder="写真の説明（任意）" style="max-width:160px">
+            <button onclick="removeLinkRow(this)" title="削除">✕</button>
+          </div>
+        </div>
+        <button class="btn-sub" onclick="addLinkRow()" style="margin-top:.5rem;font-size:12px">＋ リンクをもう1枚追加</button>
+        <div id="drive-link-preview" class="drive-link-preview"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 人員・安全報告</div>
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">本日出勤人数</label>
+          <input type="number" id="r-staff" value="65" min="0">
+        </div>
+        <div class="field">
+          <label class="lbl">残業者数</label>
+          <input type="number" id="r-overtime" value="0" min="0">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">トラブル・けが・気になること</label>
+        <textarea id="r-people" placeholder="例：作業者Bが右手を軽く切った。応急処置済み。&#10;CとDの間で手順について意見が食い違い→翌日確認する。"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 本日の振り返り</div>
+      <div class="field">
+        <label class="lbl">👍 良かったこと</label>
+        <textarea id="r-good" placeholder="例：段取り時間を昨日より15分短縮できた。"></textarea>
+      </div>
+      <div class="field">
+        <label class="lbl">⚠️ 課題・気になったこと</label>
+        <textarea id="r-bad" placeholder="例：材料の納品が遅れて午後から溶接工程が止まった。"></textarea>
+      </div>
+    </div>
+
+    <button class="btn-save" onclick="saveReport()" id="save-btn">💾 日報を保存する</button>
+    <div class="success-msg" id="save-ok">✅ 保存しました！お疲れさまでした。</div>
+  </div>
+
+  <!-- ========== 製番進捗 ========== -->
+  <div id="section-seiban" class="section">
+    <div class="card">
+      <div class="card-title">📋 工程を選んで製番を入力</div>
+      <div class="proc-tabs" id="proc-tabs"></div>
+      <div id="proc-blocks"></div>
+      <button class="btn-save" onclick="saveSeibanAll()" style="margin-top:.75rem">💾 製番進捗を保存する</button>
+      <div class="success-msg" id="seiban-ok">✅ 保存しました！</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📥 Excelからコピペで一括入力</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem;line-height:1.7">
+        ExcelからコピーしたデータをそのままここにCtrl+V（貼り付け）してください。<br>
+        <strong>順番：</strong>作業者名　製番　数量（タブ区切り・Excelそのまま）
+      </p>
+      <textarea class="paste-area" id="paste-data" placeholder="ここにExcelデータをCtrl+Vで貼り付け&#10;（例）&#10;山田　A-1234　3&#10;田中　B-5678　2"></textarea>
+      <button class="btn-sub" onclick="parsePaste()" style="margin-top:.6rem;width:100%;justify-content:center">📂 読み込む</button>
+      <div id="paste-result" style="margin-top:.5rem;font-size:13px;color:var(--text2)"></div>
+    </div>
+  </div>
+
+  <!-- ========== ダッシュボード ========== -->
+  <div id="section-dashboard" class="section">
+    <div class="metrics">
+      <div class="metric"><div class="lbl2">今月 不具合</div><div class="num" id="m-def" style="color:#a32d2d">—</div></div>
+      <div class="metric"><div class="lbl2">今月 製番総数</div><div class="num" id="m-sei">—</div></div>
+      <div class="metric"><div class="lbl2">日報件数</div><div class="num" id="m-rep">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 不具合推移（直近7日）</div>
+      <div id="chart-defect"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ 工程別 製番実績（今月累計）</div>
+      <div id="chart-proc"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🕐 最近の日報</div>
+      <div id="recent-logs"></div>
+    </div>
+  </div>
+
+  <!-- ========== AI分析 ========== -->
+  <div id="section-ai" class="section">
+    <div class="card">
+      <div class="card-title">✨ AI現場分析・改善提案</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.85rem;line-height:1.7">日報・製番データをもとに、AIが問題点・改善提案・優先対応事項を分析します。</p>
+      <button class="btn-ai" onclick="runAI()" id="ai-btn">✨ AIに分析・提案させる</button>
+      <div id="ai-out"></div>
+    </div>
+    <div class="card" id="pri-card" style="display:none">
+      <div class="card-title">🔢 優先対応リスト</div>
+      <div id="pri-list"></div>
+    </div>
+  </div>
+
+  <!-- ========== ISO報告書 ========== -->
+  <div id="section-iso" class="section">
+    <div class="card">
+      <div class="card-title">📄 ISO進捗報告書 自動生成</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.85rem;line-height:1.7">月次の日報データをもとに、ISO進捗報告書を自動生成します。MAXHUBに映してそのまま発表できます。</p>
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">報告対象月</label>
+          <input type="month" id="iso-month">
+        </div>
+        <div class="field">
+          <label class="lbl">テンプレート</label>
+          <select id="iso-tmpl">
+            <option>月次ISO進捗報告</option>
+            <option>品質目標達成状況</option>
+            <option>是正処置報告</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-ai" onclick="genISO()" id="iso-btn">📄 報告書を自動生成する</button>
+      <div id="iso-out"></div>
+    </div>
+  </div>
+
+  <!-- ========== 設定 ========== -->
+  <div id="section-settings" class="section">
+    <div class="card">
+      <div class="card-title">👥 工程・作業者の登録</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:.85rem;line-height:1.7">各工程の作業者名をここで登録してください。登録するとこのパソコンに保存され、日報入力・製番進捗に自動反映されます。</p>
+      <div id="proc-settings"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📷 Googleドライブ 写真運用ガイド</div>
+      <div style="font-size:13px;line-height:1.9">
+        <div class="guide-step">
+          <div class="guide-num">1</div>
+          <div><strong>スマホで不具合写真を撮影する</strong><br><span style="color:var(--text2);font-size:12px">現場でそのままスマホカメラで撮るだけでOK</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">2</div>
+          <div><strong>Googleドライブにアップロードする</strong><br><span style="color:var(--text2);font-size:12px">Googleドライブアプリ →「＋」→「アップロード」→ 写真を選ぶ<br>「不具合写真」フォルダを作って整理するとなお良し</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">3</div>
+          <div><strong>写真の共有リンクをコピーする</strong><br><span style="color:var(--text2);font-size:12px">写真を長押し →「共有」→「リンクをコピー」<br>（「リンクを知っている全員が閲覧可」に設定してください）</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">4</div>
+          <div><strong>日報入力画面に貼り付ける</strong><br><span style="color:var(--text2);font-size:12px">「不具合報告」の写真リンク欄にCtrl+Vで貼り付けて保存</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">5</div>
+          <div><strong>ダッシュボードからリンクをタップして確認</strong><br><span style="color:var(--text2);font-size:12px">管理職が日報履歴からリンクをクリックすれば写真がすぐ開く</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 使い方ガイド</div>
+      <div style="font-size:13px">
+        <div class="guide-step">
+          <div class="guide-num">1</div>
+          <div><strong>GitHubのURLをブックマークする</strong><br><span style="color:var(--text2);font-size:12px">各工程のパソコン・スマホのブラウザでブックマーク登録</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">2</div>
+          <div><strong>「設定」タブで作業者名を登録する</strong><br><span style="color:var(--text2);font-size:12px">各工程ごとに全作業者の名前を入力して「追加」を押す</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">3</div>
+          <div><strong>毎日の業務終了後に「日報入力」で記録する</strong><br><span style="color:var(--text2);font-size:12px">工程・名前を選んで入力するだけ（3〜5分）</span></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num">4</div>
+          <div><strong>月末：AI分析 → ISO報告書を自動生成</strong><br><span style="color:var(--text2);font-size:12px">ボタン1つで完成。MAXHUBに映してそのまま発表</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💾 データ管理</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem;line-height:1.6">データをテキストとしてコピーし、メモ帳などに貼り付けて保存してください。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-sub" onclick="openBackup()">📤 バックアップ（テキストコピー）</button>
+        <button class="btn-sub" onclick="openRestore()">📥 データを復元する</button>
+        <button class="btn-sub" onclick="clearAllData()" style="color:var(--danger-text);border-color:var(--danger-text)">🗑️ 全データ削除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- バックアップモーダル -->
+<div class="modal-overlay" id="modal-backup">
+  <div class="modal">
+    <h3>📤 バックアップ</h3>
+    <p style="font-size:12px;color:var(--text2);line-height:1.6">下のテキストを全選択（Ctrl+A）→ コピー（Ctrl+C）して、メモ帳などに貼り付けて保存してください。</p>
+    <div class="modal-body">
+      <textarea id="backup-text" readonly style="width:100%;min-height:160px;font-size:11px;font-family:monospace;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.75rem;color:var(--text)"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ai" onclick="copyBackupText()" style="flex:1">📋 テキストをコピーする</button>
+      <button class="btn-sub" onclick="closeModal('modal-backup')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 復元モーダル -->
+<div class="modal-overlay" id="modal-restore">
+  <div class="modal">
+    <h3>📥 データを復元する</h3>
+    <p style="font-size:12px;color:var(--text2);line-height:1.6">以前コピーして保存したバックアップテキストをここに貼り付けてください。</p>
+    <div class="modal-body">
+      <textarea id="restore-text" style="width:100%;min-height:160px;font-size:11px;font-family:monospace;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.75rem;color:var(--text)" placeholder="バックアップテキストをCtrl+Vで貼り付け"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ai" onclick="doRestore()" style="flex:1">✅ 復元する</button>
+      <button class="btn-sub" onclick="closeModal('modal-restore')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROCESSES = ['切断','曲げ+部工','溶接','塗装+酸洗','組立','工務'];
+const PROC_COLORS = ['#534AB7','#0F6E56','#D85A30','#185FA5','#BA7517','#993556'];
+let reports=[], seibanData=[], workers={};
+PROCESSES.forEach(p=>workers[p]=[]);
+
+function init(){
+  const d=new Date();
+  document.getElementById('today-label').textContent=d.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('iso-month').value=d.getFullYear()+'-'+m;
+  load(); buildProcSelect(); buildSeibanBlocks(); buildProcSettings(); updateDashboard();
+}
+function load(){
+  try{reports=JSON.parse(localStorage.getItem('sb_reports')||'[]');}catch(e){reports=[];}
+  try{seibanData=JSON.parse(localStorage.getItem('sb_seiban')||'[]');}catch(e){seibanData=[];}
+  try{const w=JSON.parse(localStorage.getItem('sb_workers')||'null');if(w)workers=w;}catch(e){}
+}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+function showTab(t){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('section-'+t).classList.add('active');
+  if(event&&event.currentTarget)event.currentTarget.classList.add('active');
+  if(t==='dashboard')updateDashboard();
+  if(t==='settings')buildProcSettings();
+}
+
+/* Googleドライブリンク欄 */
+function addLinkRow(){
+  const wrap=document.getElementById('drive-link-inputs');
+  const row=document.createElement('div');
+  row.className='drive-link-row';
+  row.innerHTML=`<input type="url" class="drive-link-input" placeholder="https://drive.google.com/file/d/...">
+    <input type="text" class="drive-link-name" placeholder="写真の説明（任意）" style="max-width:160px">
+    <button onclick="removeLinkRow(this)" title="削除">✕</button>`;
+  wrap.appendChild(row);
+}
+function removeLinkRow(btn){
+  const rows=document.querySelectorAll('#drive-link-inputs .drive-link-row');
+  if(rows.length>1) btn.closest('.drive-link-row').remove();
+  else { btn.closest('.drive-link-row').querySelectorAll('input').forEach(i=>i.value=''); }
+}
+function collectLinks(){
+  const links=[];
+  document.querySelectorAll('#drive-link-inputs .drive-link-row').forEach(row=>{
+    const url=row.querySelector('.drive-link-input').value.trim();
+    const name=row.querySelector('.drive-link-name').value.trim();
+    if(url) links.push({url,name:name||'写真'});
+  });
+  return links;
+}
+function resetLinkRows(){
+  const wrap=document.getElementById('drive-link-inputs');
+  wrap.innerHTML=`<div class="drive-link-row">
+    <input type="url" class="drive-link-input" placeholder="https://drive.google.com/file/d/...">
+    <input type="text" class="drive-link-name" placeholder="写真の説明（任意）" style="max-width:160px">
+    <button onclick="removeLinkRow(this)" title="削除">✕</button>
+  </div>`;
+}
+
+/* 工程セレクト */
+function buildProcSelect(){
+  const sel=document.getElementById('r-process');
+  sel.innerHTML='<option value="">-- 選択してください --</option>';
+  PROCESSES.forEach(p=>sel.innerHTML+=`<option>${p}</option>`);
+}
+function updateWorkerSelect(){
+  const proc=document.getElementById('r-process').value;
+  const sel=document.getElementById('r-worker');
+  const list=workers[proc]||[];
+  if(!proc){sel.innerHTML='<option value="">-- 工程を先に選択 --</option>';return;}
+  sel.innerHTML='<option value="">-- 名前を選択 --</option>';
+  list.forEach(w=>sel.innerHTML+=`<option>${w}</option>`);
+  if(!list.length) sel.innerHTML+='<option disabled>（設定タブで作業者を登録してください）</option>';
+}
+
+/* 製番ブロック */
+function buildSeibanBlocks(){
+  const tabs=document.getElementById('proc-tabs'), blocks=document.getElementById('proc-blocks');
+  if(!tabs||!blocks)return;
+  tabs.innerHTML=''; blocks.innerHTML='';
+  PROCESSES.forEach((p,i)=>{
+    tabs.innerHTML+=`<button class="proc-tab${i===0?' active':''}" onclick="switchProc(${i})">${p}</button>`;
+    const wlist=workers[p]||[];
+    const rows=wlist.map(w=>{
+      const wk=w.replace(/[^a-zA-Z0-9]/g,'_');
+      return `<tr><td style="font-weight:500">${escHtml(w)}</td>
+        <td><input type="text" placeholder="製番（例：A-1234）" id="sei-${i}-${wk}"></td>
+        <td><input type="number" min="0" value="0" id="cnt-${i}-${wk}" style="width:64px"></td></tr>`;
+    }).join('');
+    blocks.innerHTML+=`<div class="proc-block${i===0?' active':''}" id="pblock-${i}">
+      ${wlist.length
+        ?`<div style="overflow-x:auto"><table class="seiban-table"><thead><tr><th>作業者</th><th>製番</th><th>数量</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        :`<p style="font-size:13px;color:var(--text2);padding:.5rem 0">⚙️ 「設定」タブで「${p}」工程の作業者を登録してください</p>`}
+    </div>`;
+  });
+}
+function switchProc(i){
+  document.querySelectorAll('.proc-tab').forEach((b,j)=>b.classList.toggle('active',j===i));
+  document.querySelectorAll('.proc-block').forEach((b,j)=>b.classList.toggle('active',j===i));
+}
+function saveSeibanAll(){
+  const today=new Date().toISOString().slice(0,10);
+  PROCESSES.forEach((p,i)=>{
+    (workers[p]||[]).forEach(w=>{
+      const wk=w.replace(/[^a-zA-Z0-9]/g,'_');
+      const seiEl=document.getElementById(`sei-${i}-${wk}`), cntEl=document.getElementById(`cnt-${i}-${wk}`);
+      const sei=seiEl?.value.trim()||'', cnt=parseInt(cntEl?.value||0);
+      if(sei||cnt>0) seibanData.push({date:today,process:p,worker:w,seiban:sei,count:cnt});
+      if(seiEl)seiEl.value=''; if(cntEl)cntEl.value=0;
+    });
+  });
+  save('sb_seiban',seibanData); showMsg('seiban-ok');
+}
+
+function parsePaste(){
+  const raw=document.getElementById('paste-data').value.trim();
+  if(!raw){document.getElementById('paste-result').textContent='データがありません';return;}
+  const today=new Date().toISOString().slice(0,10); let count=0;
+  raw.split('\n').filter(l=>l.trim()).forEach(line=>{
+    const cols=line.split(/\t|　| {2,}/).map(c=>c.trim()).filter(Boolean);
+    if(cols.length>=2){
+      const worker=cols[0],seiban=cols[1],cnt=parseInt(cols[2])||1;
+      const proc=PROCESSES.find(p=>(workers[p]||[]).includes(worker))||'（未分類）';
+      seibanData.push({date:today,process:proc,worker,seiban,count:cnt}); count++;
+    }
+  });
+  save('sb_seiban',seibanData);
+  document.getElementById('paste-result').innerHTML=`<span style="color:var(--success-text)">✅ ${count}件を読み込みました</span>`;
+  document.getElementById('paste-data').value='';
+}
+
+/* 日報保存 */
+function saveReport(){
+  const btn=document.getElementById('save-btn'); btn.disabled=true;
+  const links=collectLinks();
+  reports.push({
+    date:new Date().toISOString(),
+    process:document.getElementById('r-process').value,
+    worker:document.getElementById('r-worker').value,
+    defectType:document.getElementById('r-defect-type').value,
+    defectCount:parseInt(document.getElementById('r-defect-count').value)||0,
+    defectDetail:document.getElementById('r-defect-detail').value,
+    driveLinks:links,
+    staff:parseInt(document.getElementById('r-staff').value)||0,
+    overtime:parseInt(document.getElementById('r-overtime').value)||0,
+    people:document.getElementById('r-people').value,
+    good:document.getElementById('r-good').value,
+    bad:document.getElementById('r-bad').value
+  });
+  save('sb_reports',reports);
+  resetLinkRows();
+  document.getElementById('r-defect-count').value=0;
+  ['r-defect-detail','r-people','r-good','r-bad'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('r-defect-type').selectedIndex=0;
+  showMsg('save-ok'); setTimeout(()=>btn.disabled=false,2500);
+}
+
+function showMsg(id){const el=document.getElementById(id);el.style.display='block';setTimeout(()=>el.style.display='none',2500);}
+
+/* ダッシュボード */
+function updateDashboard(){
+  const now=new Date(), ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mRep=reports.filter(r=>r.date&&r.date.slice(0,7)===ym);
+  const mSei=seibanData.filter(r=>r.date&&r.date.slice(0,7)===ym);
+  document.getElementById('m-def').textContent=mRep.reduce((a,r)=>a+r.defectCount,0);
+  document.getElementById('m-sei').textContent=mSei.reduce((a,r)=>a+r.count,0);
+  document.getElementById('m-rep').textContent=mRep.length;
+  renderDefChart(); renderProcChart(mSei); renderLogs();
+}
+function renderDefChart(){
+  const wrap=document.getElementById('chart-defect'), days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    const cnt=reports.filter(r=>r.date&&r.date.slice(0,10)===ds).reduce((a,r)=>a+r.defectCount,0);
+    days.push({label:d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}),cnt});
+  }
+  const max=Math.max(...days.map(d=>d.cnt),1);
+  wrap.innerHTML=days.map(d=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px">
+      <span style="width:40px;color:var(--text2);text-align:right;flex-shrink:0">${d.label}</span>
+      <div class="bar-wrap" style="flex:1"><div class="bar" style="width:${Math.round(d.cnt/max*100)}%;background:#a32d2d;min-width:${d.cnt?4:0}px"></div></div>
+      <span style="width:20px;text-align:right;font-weight:600">${d.cnt}</span>
+    </div>`).join('');
+}
+function renderProcChart(mSei){
+  const wrap=document.getElementById('chart-proc'), totals={};
+  PROCESSES.forEach(p=>totals[p]=0);
+  mSei.forEach(r=>{if(totals[r.process]!==undefined)totals[r.process]+=r.count;});
+  const max=Math.max(...Object.values(totals),1);
+  wrap.innerHTML=PROCESSES.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px">
+      <span style="width:72px;flex-shrink:0;color:var(--text2)">${p}</span>
+      <div class="bar-wrap" style="flex:1"><div class="bar" style="width:${Math.round(totals[p]/max*100)}%;background:${PROC_COLORS[i]};min-width:${totals[p]?4:0}px"></div></div>
+      <span style="width:30px;text-align:right;font-weight:600">${totals[p]}</span>
+    </div>`).join('');
+}
+function renderLogs(){
+  const wrap=document.getElementById('recent-logs');
+  if(!reports.length){wrap.innerHTML='<p style="font-size:13px;color:var(--text2)">まだ日報がありません。「日報入力」タブから入力してください。</p>';return;}
+  wrap.innerHTML=[...reports].reverse().slice(0,6).map(r=>{
+    const d=new Date(r.date), ds=d.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+    const linkCount=r.driveLinks?.length||0;
+    const linkHtml=r.driveLinks?.map(l=>`<a href="${escHtml(l.url)}" target="_blank" rel="noopener" class="drive-chip">📷 <span>${escHtml(l.name)}</span></a>`).join('')||'';
+    return `<div class="log-item">
+      <div class="log-date">${ds}　${r.process||''}　${r.worker||''}</div>
+      <div style="margin-top:4px">
+        ${r.defectCount>0?`<span class="badge b-red">不具合 ${r.defectCount}件</span>`:''}
+        ${r.people?`<span class="badge b-amber">人員問題</span>`:''}
+        ${linkCount?`<span class="badge b-blue">📷 写真${linkCount}枚</span>`:''}
+        ${!r.defectCount&&!r.people?`<span class="badge b-green">問題なし</span>`:''}
+      </div>
+      ${r.defectDetail?`<div style="font-size:12px;color:var(--text2);margin-top:3px">${escHtml(r.defectDetail.slice(0,70))}${r.defectDetail.length>70?'…':''}</div>`:''}
+      ${linkHtml?`<div class="drive-link-preview" style="margin-top:6px">${linkHtml}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+/* データサマリー */
+function buildSummary(){
+  const now=new Date(), ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mRep=reports.filter(r=>r.date&&r.date.slice(0,7)===ym);
+  const mSei=seibanData.filter(r=>r.date&&r.date.slice(0,7)===ym);
+  if(!mRep.length&&!mSei.length) return `製造板金業65名の工場。サンプルデータ想定：
+不具合：クレーム品3件（溶接ひずみ×2、寸法不良×1）、本社返却2件（バリ残り）
+工程別製番：切断120件、曲げ+部工95件、溶接88件、塗装+酸洗75件、組立60件、工務45件
+人員問題：軽傷1件（手のカット）、作業者間トラブル1件
+課題：材料納品遅延により溶接工程が午後停滞。残業頻発2名。`;
+  const totalDef=mRep.reduce((a,r)=>a+r.defectCount,0);
+  const procTotals={}; PROCESSES.forEach(p=>procTotals[p]=0);
+  mSei.forEach(r=>{if(procTotals[r.process]!==undefined)procTotals[r.process]+=r.count;});
+  const linkCount=mRep.reduce((a,r)=>a+(r.driveLinks?.length||0),0);
+  return `今月の日報${mRep.length}件分：
+不具合総件数：${totalDef}件（写真記録：${linkCount}枚）
+不具合詳細：${mRep.map(r=>r.defectDetail).filter(Boolean).join(' / ')||'なし'}
+工程別製番数：${PROCESSES.map(p=>`${p}:${procTotals[p]}件`).join('、')}
+人員・安全問題：${mRep.map(r=>r.people).filter(Boolean).join(' / ')||'なし'}
+課題：${mRep.map(r=>r.bad).filter(Boolean).join(' / ')||'なし'}
+良かった点：${mRep.map(r=>r.good).filter(Boolean).join(' / ')||'なし'}`;
+}
+
+/* AI分析 */
+async function runAI(){
+  const btn=document.getElementById('ai-btn'), out=document.getElementById('ai-out'), pc=document.getElementById('pri-card');
+  btn.disabled=true; pc.style.display='none';
+  out.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-top:.75rem"><span class="spinner"></span>AIが分析中です...</div>';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-beta':'interop-2025-03-26'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,
+        messages:[{role:'user',content:`製造板金業（65名）の生産管理・品質管理コンサルタントとして分析してください。
+【問題分析】【改善提案】の2セクションで回答後、優先対応事項TOP5をJSON配列で出力してください。
+JSON形式：[{"num":1,"title":"タイトル","detail":"詳細","urgency":"高/中/低"}]
+工程：切断、曲げ+部工、溶接、塗装+酸洗、組立、工務\n\n${buildSummary()}`}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.[0]?.text||'エラー';
+    const jm=text.match(/\[[\s\S]*?\]/);
+    let pris=[],main=text;
+    if(jm){try{pris=JSON.parse(jm[0]);main=text.replace(jm[0],'').trim();}catch(e){}}
+    out.innerHTML=`<div class="ai-out">${escHtml(main).replace(/【([^】]+)】/g,'<strong>【$1】</strong>')}</div>`;
+    if(pris.length){
+      pc.style.display='block';
+      const cols=['#a32d2d','#D85A30','#BA7517','#185FA5','#0F6E56'];
+      document.getElementById('pri-list').innerHTML=pris.map((p,i)=>`
+        <div class="pri-item">
+          <div class="pri-num" style="background:${cols[i]||'#888'}22;color:${cols[i]||'#888'}">${p.num}</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">${escHtml(p.title)}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${escHtml(p.detail)}</div></div>
+          <span class="badge ${p.urgency==='高'?'b-red':p.urgency==='中'?'b-amber':'b-green'}">${p.urgency}</span>
+        </div>`).join('');
+    }
+  }catch(e){
+    out.innerHTML=`<div style="color:var(--danger-text);font-size:13px;margin-top:.75rem;padding:.75rem;background:var(--danger-bg);border-radius:var(--radius)">⚠️ エラー：${escHtml(e.message)}</div>`;
+  }
+  btn.disabled=false;
+}
+
+/* ISO報告書 */
+async function genISO(){
+  const btn=document.getElementById('iso-btn'), out=document.getElementById('iso-out');
+  btn.disabled=true;
+  out.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-top:.75rem"><span class="spinner"></span>報告書を生成中です...</div>';
+  const month=document.getElementById('iso-month').value, tmpl=document.getElementById('iso-tmpl').value;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-beta':'interop-2025-03-26'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1600,
+        messages:[{role:'user',content:`ISO 9001対応。製造板金業（65名）向けに「${tmpl}」（${month}）を作成してください。
+MAXHUB発表用に見やすく箇条書き中心で。
+必須：①品質目標の達成状況 ②不具合の傾向分析 ③是正・予防処置の状況 ④次月の重点取組事項
+工程：切断、曲げ+部工、溶接、塗装+酸洗、組立、工務\n\n${buildSummary()}`}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.[0]?.text||'エラー';
+    out.innerHTML=`<div class="ai-out">${escHtml(text)}</div>
+      <div style="display:flex;gap:8px;margin-top:.75rem">
+        <button class="btn-sub" onclick="copyISO()" style="flex:1;justify-content:center">📋 テキストをコピー</button>
+        <button class="btn-sub" onclick="printISO()" style="flex:1;justify-content:center">🖨️ 印刷する</button>
+      </div>`;
+  }catch(e){
+    out.innerHTML=`<div style="color:var(--danger-text);font-size:13px;margin-top:.75rem;padding:.75rem;background:var(--danger-bg);border-radius:var(--radius)">⚠️ エラー：${escHtml(e.message)}</div>`;
+  }
+  btn.disabled=false;
+}
+function copyISO(){const t=document.querySelector('#iso-out .ai-out')?.textContent;if(t)navigator.clipboard.writeText(t).then(()=>alert('コピーしました！'));}
+function printISO(){
+  const t=document.querySelector('#iso-out .ai-out')?.textContent;if(!t)return;
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><meta charset="UTF-8"><title>ISO報告書</title><style>body{font-family:-apple-system,'Hiragino Sans',sans-serif;font-size:14px;line-height:1.8;padding:2rem;max-width:800px;margin:0 auto}pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${t}</pre></body></html>`);
+  w.document.close();w.print();
+}
+
+/* 設定 */
+function buildProcSettings(){
+  const wrap=document.getElementById('proc-settings');if(!wrap)return;
+  wrap.innerHTML=PROCESSES.map((p,i)=>`
+    <div style="margin-bottom:1.1rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border)">
+      <div style="font-size:14px;font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${PROC_COLORS[i]};flex-shrink:0"></span>${p}
+      </div>
+      <div id="wtags-${i}" style="margin-bottom:.5rem;min-height:28px">${renderTags(p,i)}</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="new-w-${i}" placeholder="作業者名を入力" style="flex:1" onkeydown="if(event.key==='Enter')addW(${i})">
+        <button class="btn-sub" onclick="addW(${i})">＋ 追加</button>
+      </div>
+    </div>`).join('');
+}
+function renderTags(p,i){
+  const list=workers[p]||[];
+  if(!list.length)return'<span style="font-size:12px;color:var(--text3)">まだ登録なし</span>';
+  return list.map(w=>`<span class="worker-tag">${escHtml(w)}<button onclick="removeW('${escAttr(p)}','${escAttr(w)}',${i})" title="削除">×</button></span>`).join('');
+}
+function addW(i){
+  const p=PROCESSES[i], inp=document.getElementById(`new-w-${i}`), name=inp.value.trim();
+  if(!name)return;
+  if(!workers[p])workers[p]=[];
+  if(!workers[p].includes(name)){workers[p].push(name);save('sb_workers',workers);document.getElementById(`wtags-${i}`).innerHTML=renderTags(p,i);buildProcSelect();buildSeibanBlocks();updateWorkerSelect();}
+  inp.value='';
+}
+function removeW(p,w,i){
+  workers[p]=(workers[p]||[]).filter(x=>x!==w);save('sb_workers',workers);
+  document.getElementById(`wtags-${i}`).innerHTML=renderTags(p,i);buildProcSelect();buildSeibanBlocks();
+}
+
+/* バックアップ */
+function openBackup(){
+  document.getElementById('backup-text').value=JSON.stringify({reports,seibanData,workers,exportedAt:new Date().toISOString()});
+  document.getElementById('modal-backup').classList.add('open');
+}
+function copyBackupText(){
+  const t=document.getElementById('backup-text').value;
+  navigator.clipboard.writeText(t).then(()=>alert('✅ コピーしました！\nメモ帳などに貼り付けて保存してください。')).catch(()=>{document.getElementById('backup-text').select();document.execCommand('copy');alert('✅ コピーしました！');});
+}
+function openRestore(){document.getElementById('restore-text').value='';document.getElementById('modal-restore').classList.add('open');}
+function doRestore(){
+  try{
+    const d=JSON.parse(document.getElementById('restore-text').value);
+    if(d.reports)reports=d.reports;if(d.seibanData)seibanData=d.seibanData;if(d.workers)workers=d.workers;
+    save('sb_reports',reports);save('sb_seiban',seibanData);save('sb_workers',workers);
+    closeModal('modal-restore');buildProcSelect();buildSeibanBlocks();buildProcSettings();updateDashboard();
+    alert('✅ 復元しました！');
+  }catch(err){alert('⚠️ 読み込みに失敗しました。正しいバックアップテキストか確認してください。');}
+}
+function clearAllData(){
+  if(!confirm('⚠️ 全データを削除します。本当によろしいですか？\nこの操作は元に戻せません。'))return;
+  reports=[];seibanData=[];workers={};PROCESSES.forEach(p=>workers[p]=[]);
+  save('sb_reports',reports);save('sb_seiban',seibanData);save('sb_workers',workers);
+  buildProcSelect();buildSeibanBlocks();buildProcSettings();updateDashboard();alert('削除しました。');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return String(s).replace(/'/g,"\\'");}
+
+init();
+</script>
+</body>
+</html>
